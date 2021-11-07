@@ -1,60 +1,37 @@
-const isButtonDisabled = ({
-  hasCurrentUserAlreadyBooked,
-  isCurrentRoomFree,
-  isCurrentRoomBookedByCurrentUser,
-}) => {
-  if(isCurrentRoomBookedByCurrentUser) {
-    return false;
-  }
-
-  if(!isCurrentRoomFree) {
-    return true;
-  }
-
-  if(hasCurrentUserAlreadyBooked) {
-    return true;
-  }
-
-  return false;
-
-}
+import { updateRoomStatus } from '../../core/requests/api';
+import { isRoomBookableOrUnbookableForCurrentUser } from '../../core/selectors/rooms';
 
 export const RoomItem = ({
-  name,
-  isFree,
-  roomUser,
-  roomIndex,
-  user,
-  onRoomUpdate,
-  hasCurrentUserAlreadyBooked,
+	room,
+	roomIndex,
+	user,
+	onRoomUpdate,
+	hasUserBooked,
 }) => {
-  const handleBookButtonClick = () => {
-    fetch(`http://localhost:3001/update-room-status/${roomIndex}/${user}`, {
-      method: 'PUT',
-    })
-      .then((response) => {
-        return response.json();
-      })
-      .then((updatedRoom) => {
-        console.log(updatedRoom);
-        onRoomUpdate(roomIndex, updatedRoom);
-      });
-  };
-  const isCurrentRoomBookedByCurrentUser = user === roomUser;
+	const { userName: roomUser, name } = room;
+	const handleBookButtonClick = () => {
+		updateRoomStatus({ roomIndex, user }).then((updatedRoom) => {
+			onRoomUpdate(roomIndex, updatedRoom);
+		});
+	};
 
-  return (
-    <div>
-      {name}
-      <button
-        disabled={isButtonDisabled({
-          isCurrentRoomBookedByCurrentUser,
-          hasCurrentUserAlreadyBooked,
-          isCurrentRoomFree: isFree
-        })}
-        onClick={handleBookButtonClick}
-      >
-        {isCurrentRoomBookedByCurrentUser ? 'Unbook' : 'Book'}
-      </button>
-    </div>
-  );
+	const buttonLabel = user === roomUser ? 'Unbook' : 'Book';
+
+	return (
+		<div>
+			{name}
+			<button
+				disabled={
+					!isRoomBookableOrUnbookableForCurrentUser({
+						room,
+						user,
+						hasUserBooked,
+					})
+				}
+				onClick={handleBookButtonClick}
+			>
+				{buttonLabel}
+			</button>
+		</div>
+	);
 };
