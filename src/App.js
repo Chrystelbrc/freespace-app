@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import { Login } from './components/login';
 import { QRCodeScanner } from './components/qr-code-scanner';
 import { RoomsList } from './components/rooms/rooms-list';
 
 function App() {
-	const [user, setUser] = useState('');
+  const [user, setUser] = useState(localStorage.getItem('user'));
 	const [hasUserBooked, setHasUserBooked] = useState(false);
 	useState(false);
 	const [isQRCodeScannerEnabled, setIsQRCodeScannerEnabled] = useState(false);
@@ -13,9 +13,13 @@ function App() {
 	const handleUserUnbook = () => setHasUserBooked(false);
 	const handleOpenQRCodeScanner = () => setIsQRCodeScannerEnabled(true);
 	const handleCloseQRCodeScanner = () => setIsQRCodeScannerEnabled(false);
+  
+  useEffect(() => {
+		localStorage.setItem('user', user);
+	}, [user]);
 
 	if (!user) {
-		return <Login user={user} onUserSet={setUser} />;
+		return <Login onUserSet={setUser} />;
 	}
 	return (
 		<>
