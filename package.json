@@ -10,11 +10,12 @@
 		"react-dom": "^17.0.2",
 		"react-qr-reader": "^2.2.1",
 		"react-scripts": "4.0.3",
+		"react-toastify": "^8.1.0",
 		"web-vitals": "^1.0.1"
 	},
 	"scripts": {
-    "start": "react-scripts start",
-    "start-latest": "NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
+		"start": "react-scripts start",
+		"start-latest": "NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
 		"start-secure": "PORT=3443 HTTPS=true npm start",
 		"build": "react-scripts build",
 		"test": "react-scripts test",

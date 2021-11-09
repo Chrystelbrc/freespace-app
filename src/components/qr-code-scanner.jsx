@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
 import QRReader from 'react-qr-reader';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { updateRoomStatus } from '../core/requests/api';
 import {
 	getRoomIndexFromQRCodeData,
@@ -7,57 +8,41 @@ import {
 } from '../core/selectors/qr-code-data';
 
 const styles = {
-	wrapper: {
-		display: 'flex',
-		flexDirection: 'column',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
 	camera: {
 		width: '100%',
-		maxWidth: 350,
 	},
 };
 
-const ERROR = {
-	NOT_SUPPORTED: 'Unsupported device',
-	NOT_ALLOWED: 'You have disallowed camera access',
-	NOT_FOUND: 'Scanned room not found',
-	ROOM_ALREADY_BOOKED: 'Scanned room has been booked by another one',
-	NETWORK_ERROR: 'An network error occured',
+const MESSAGES = {
+	ERROR: {
+		NOT_ALLOWED: 'You have disallowed camera access',
+		NOT_FOUND: 'Scanned room not found',
+		ROOM_ALREADY_BOOKED: 'Scanned room has been booked by another one',
+		NETWORK_ERROR: 'An network error occured',
+	},
+	WARNING: {
+		INVALID_QR_CODE: 'Invalid QR code',
+	},
+	CONFIRM: {
+		BOOKED: 'The scanned room has been successfully booked',
+		UNBOOKED: 'The scanned room has been successfully unbooked',
+	},
+	INFO: {
+		QR_CODE_FOUND: 'QR Code found',
+		READY: 'Ready to scan',
+	},
 };
 
-const WARNING = {
-	INVALID_QR_CODE: 'Invalid QR code',
-};
-
-const CONFIRM = {
-	BOOKED: 'The scanned room has been successfully booked',
-	UNBOOKED: 'The scanned room has been successfully unbooked',
-};
-
-const onGetUserMediaVideoNotAllowedError = (onError) => {
-	navigator.mediaDevices.getUserMedia({ video: true }).catch((error) => {
-		if (error.name === 'NotAllowedError') {
-			// User denied access to camera
-			onError();
-		}
-	});
-};
-
-export const QRCodeScanner = ({ user }) => {
-	const [isLoading, setIsLoading] = useState(true);
-	const [errorMessage, setErrorMessage] = useState(null);
-	const [warningMessage, setWarningMessage] = useState(null);
-	const [confirmMessage, setConfirmMessage] = useState(null);
-
+export const QRCodeScanner = ({ user, onClose }) => {
 	const handleQRCodeScan = (qrCodeData) => {
 		if (!qrCodeData) {
 			return;
 		}
+
+		toast.info(MESSAGES.INFO.QR_CODE_FOUND);
 		if (!isFreeSpaceQRCodeData(qrCodeData)) {
 			// QR Code is not from us
-			setWarningMessage(WARNING.INVALID_QR_CODE);
+			toast.warning(`${MESSAGES.WARNING.INVALID_QR_CODE} (${qrCodeData})`);
 			return;
 		}
 
@@ -65,68 +50,53 @@ export const QRCodeScanner = ({ user }) => {
 
 		if (!qrCodeRoomIndex) {
 			// QR Code is not valid
-			setWarningMessage(WARNING.INVALID_QR_CODE);
+			toast.warning(MESSAGES.WARNING.INVALID_QR_CODE);
 			return;
 		}
 
 		updateRoomStatus({ roomIndex: qrCodeRoomIndex, user }).then(
 			(updatedRoom) => {
-				setConfirmMessage(
-					updatedRoom.isFree ? CONFIRM.UNBOOKED : CONFIRM.BOOKED
+				toast.success(
+					updatedRoom.isFree
+						? MESSAGES.CONFIRM.UNBOOKED
+						: MESSAGES.CONFIRM.BOOKED
 				);
+				onClose();
 			},
 			(error) => {
-				debugger;
 				if (error.status === 404) {
-					setErrorMessage(ERROR.NOT_FOUND);
+					toast.error(MESSAGES.ERROR.NOT_FOUND);
 					return;
 				}
 				if (error.status === 400) {
-					setErrorMessage(ERROR.ROOM_ALREADY_BOOKED);
+					toast.error(MESSAGES.ERROR.ROOM_ALREADY_BOOKED);
 					return;
 				}
 
-				setErrorMessage(ERROR.NETWORK_ERROR);
+				toast.error(MESSAGES.ERROR.NETWORK_ERROR);
 				return;
 			}
 		);
 	};
 
-	const handleError = (error) => {
-		setErrorMessage(ERROR.NOT_SUPPORTED);
-	};
-
 	const handleLoad = () => {
-		setIsLoading(false);
+		toast.info(MESSAGES.INFO.READY);
 	};
 
 	const handleNotAllowedError = () => {
 		// User denied access to camera
-		setErrorMessage(ERROR.NOT_ALLOWED);
+		toast.error(MESSAGES.ERROR.NOT_ALLOWED);
 	};
 
-	useEffect(() => {
-		onGetUserMediaVideoNotAllowedError(handleNotAllowedError);
-	}, []);
-
-	if (errorMessage) {
-		return <div>{errorMessage}</div>;
-	}
-
 	return (
-		<div style={styles.wrapper}>
-			{!!warningMessage && <div>{warningMessage}</div>}
-			{!!confirmMessage && <div>{confirmMessage}</div>}
-			<QRReader
-				// delay={500}
-				// facingMode={'environment'}
-				// resolution={600}
-				style={styles.camera}
-				onError={handleError}
-				onScan={handleQRCodeScan}
-				onLoad={handleLoad}
-			/>
-			{isLoading && 'Loading...'}
-		</div>
+		<QRReader
+			delay={1000}
+			facingMode={'environment'}
+			style={styles.camera}
+			onError={handleNotAllowedError}
+			onScan={handleQRCodeScan}
+			onLoad={handleLoad}
+			showViewFinder={false}
+		/>
 	);
 };
