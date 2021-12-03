@@ -1,17 +1,45 @@
 import QRReader from 'react-qr-reader';
+import { StyleSheet, css } from 'aphrodite/no-important';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Modal, View, ModalBar } from 'wireframe-ui';
+import { MdQrCode2 } from 'react-icons/md';
+import { BiFullscreen } from 'react-icons/bi';
 import { updateRoomStatus } from '../core/requests/api';
 import {
 	getRoomIndexFromQRCodeData,
 	isFreeSpaceQRCodeData,
 } from '../core/selectors/qr-code-data';
 
-const styles = {
-	camera: {
-		width: '100%',
-	},
+const cameraStyle = {
+	width: `100%`,
 };
+
+const styles = StyleSheet.create({
+	modal: {
+		maxWidth: '50vw',
+		width: '95vh',
+		margin: 'calc(var(--wireframe-spacing-element) * 2)',
+		'@media (orientation: portrait)': {
+			width: 'calc(95vw - var(--wireframe-spacing-element) * 4)',
+			maxWidth: 'none',
+		},
+	},
+	qrCodeInlayView: {
+		position: 'absolute',
+		top: 'var(--wireframe-dimension-m)',
+		left: 0,
+		right: 0,
+		bottom: 0,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	qrCodeInlayIcon: {
+		width: '100%',
+		height: '100%',
+		color: 'rgba(255, 255, 255, 0.5)',
+	},
+});
 
 const MESSAGES = {
 	ERROR: {
@@ -57,9 +85,9 @@ export const QRCodeScanner = ({ user, onClose }) => {
 		updateRoomStatus({ roomIndex: qrCodeRoomIndex, user }).then(
 			(updatedRoom) => {
 				toast.success(
-					updatedRoom.isFree
-						? MESSAGES.CONFIRM.UNBOOKED
-						: MESSAGES.CONFIRM.BOOKED
+					updatedRoom.userName
+						? MESSAGES.CONFIRM.BOOKED
+						: MESSAGES.CONFIRM.UNBOOKED
 				);
 				onClose();
 			},
@@ -89,14 +117,24 @@ export const QRCodeScanner = ({ user, onClose }) => {
 	};
 
 	return (
-		<QRReader
-			delay={1000}
-			facingMode={'environment'}
-			style={styles.camera}
-			onError={handleNotAllowedError}
-			onScan={handleQRCodeScan}
-			onLoad={handleLoad}
-			showViewFinder={false}
-		/>
+		<Modal styleDefinitions={[styles.modal]}>
+			<ModalBar
+				onClose={onClose}
+				ModalTitleIcon={MdQrCode2}
+				modalTitle="Scan the code"
+			/>
+			<QRReader
+				delay={1000}
+				facingMode={'environment'}
+				style={cameraStyle}
+				onError={handleNotAllowedError}
+				onScan={handleQRCodeScan}
+				onLoad={handleLoad}
+				showViewFinder={false}
+			/>
+			<View styleDefinitions={[styles.qrCodeInlayView]}>
+				<BiFullscreen className={css(styles.qrCodeInlayIcon)} />
+			</View>
+		</Modal>
 	);
 };
