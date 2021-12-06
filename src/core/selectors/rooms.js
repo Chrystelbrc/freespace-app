@@ -3,13 +3,9 @@ export const isRoomBookableOrUnbookableForCurrentUser = ({
 	user,
 	hasUserBooked,
 }) => {
-	if (room.userName === user) {
-		return true;
+	if (hasUserBooked || (room.userName && room.userName !== user)) {
+		return false;
 	}
 
-	if (room.isFree && !hasUserBooked) {
-		return true;
-	}
-
-	return false;
+	return true;
 };

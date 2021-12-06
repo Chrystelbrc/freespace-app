@@ -1,31 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
+import { ThemeProvider } from 'wireframe-ui';
 import './App.css';
-import { Login } from './components/login';
-import { QRCodeScanner } from './components/qr-code-scanner';
-import { RoomsList } from './components/rooms/rooms-list';
-import { LoggedUser } from './components/user/logged-user';
-
-const styles = {
-	wrapper: {
-		display: 'flex',
-		flexDirection: 'column',
-	},
-	qrCodeWrapper: {
-		width: '100%',
-		maxWidth: '100vh',
-		alignSelf: 'center',
-	},
-};
+import { Login } from './components/pages/login';
+import { Home } from './components/pages/home';
+import { Board } from './components/pages/board';
 
 function App() {
 	const [user, setUser] = useState(localStorage.getItem('user') || '');
-	const [hasUserBooked, setHasUserBooked] = useState(false);
-	const [isQRCodeScannerEnabled, setIsQRCodeScannerEnabled] = useState(false);
-	const handleUserBook = () => setHasUserBooked(true);
-	const handleUserUnbook = () => setHasUserBooked(false);
-	const handleOpenQRCodeScanner = () => setIsQRCodeScannerEnabled(true);
-	const handleCloseQRCodeScanner = () => setIsQRCodeScannerEnabled(false);
 
 	const handleUserLogout = () => {
 		setUser('');
@@ -35,29 +17,15 @@ function App() {
 		localStorage.setItem('user', user);
 	}, [user]);
 
-	return (
-		<div style={styles.wrapper}>
-			{!user && <Login onUserSet={setUser} />}
-			{!!user && !isQRCodeScannerEnabled && (
-				<>
-					<RoomsList
-						user={user}
-						hasUserBooked={hasUserBooked}
-						onUserBook={handleUserBook}
-						onUserUnbook={handleUserUnbook}
-					/>
-					{!hasUserBooked && (
-						<button onClick={handleOpenQRCodeScanner}>Scan a QRCode</button>
-					)}
-				</>
-			)}
+	const showBoard = window.location.pathname === '/board';
 
-			{!!user && isQRCodeScannerEnabled && (
-				<div onClick={handleCloseQRCodeScanner} style={styles.qrCodeWrapper}>
-					<QRCodeScanner user={user} onClose={handleCloseQRCodeScanner} />
-				</div>
+	return (
+		<ThemeProvider>
+			{showBoard && <Board />}
+			{!showBoard && !user && <Login onUserSet={setUser} />}
+			{!showBoard && !!user && (
+				<Home user={user} onUserLogout={handleUserLogout} />
 			)}
-			<LoggedUser user={user} onLogout={handleUserLogout} />
 			<ToastContainer
 				position="bottom-right"
 				autoClose={3000}
@@ -68,7 +36,7 @@ function App() {
 				draggable
 				pauseOnHover
 			/>
-		</div>
+		</ThemeProvider>
 	);
 }
 

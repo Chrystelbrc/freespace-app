@@ -1,3 +1,3 @@
-export const API_URL = 'http://localhost:3001';
+export const API_URL = process.env.API_URL;
 
 export const QR_CODE_PREFIX = 'freespace-room#';
