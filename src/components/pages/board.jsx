@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet } from 'aphrodite/no-important';
 import { toast } from 'react-toastify';
 import { initializeClientSocket } from '../../core/sockets/initialize-client-socket';
-import { View, Overlay, LoadingSpinner, Page } from 'wireframe-ui';
+import { View, Overlay, LoadingSpinner, Page, useTheme } from 'wireframe-ui';
 import { updateRoomStatus } from '../../core/requests/api';
 import { UsersPanel } from '../users/users-panel';
 import { RoomsList } from '../rooms/rooms-list';
@@ -11,6 +11,54 @@ import { MostReportedPanel } from '../stats/most-reported-panel';
 import { GreatestReportersPanel } from '../stats/greatest-reporters-panel';
 import { LongestBookingDurationUsersPanel } from '../stats/longest-booking-duration-users-panel';
 import { MostUsedRoomsPanel } from '../stats/most-used-rooms-panel';
+
+const DARK_SHIFT_HOURS = 18;
+const LIGHT_SHIFT_HOURS = 8;
+
+const getNextShiftTimeout = () => {
+	const currentDate = new Date();
+	const currentDateHours = currentDate.getHours();
+
+	const nextShiftDate = new Date(currentDate).setHours(
+		currentDateHours >= LIGHT_SHIFT_HOURS &&
+			currentDateHours < LIGHT_SHIFT_HOURS
+			? DARK_SHIFT_HOURS
+			: DARK_SHIFT_HOURS
+	);
+
+	return nextShiftDate.getTime() - currentDate.getTime();
+};
+
+const useNightShift = () => {
+	const { toggleDarkMode, isDarkMode } = useTheme();
+
+	useEffect(() => {
+		// Check if theme is properly intially set for current date
+		const currentDateHours = new Date().getHours();
+
+		if (
+			(currentDateHours >= DARK_SHIFT_HOURS && !isDarkMode) ||
+			(currentDateHours <= LIGHT_SHIFT_HOURS && isDarkMode)
+		) {
+			toggleDarkMode();
+		}
+	}, []);
+
+	// Set up the interval.
+	useEffect(() => {
+		let currentTimeoutId;
+		const tick = () => {
+			toggleDarkMode();
+			currentTimeoutId = setTimeout(tick, getNextShiftTimeout());
+		};
+
+		currentTimeoutId = setTimeout(tick, getNextShiftTimeout());
+
+		return () => {
+			clearTimeout(currentTimeoutId);
+		};
+	}, []);
+};
 
 const styles = StyleSheet.create({
 	sections: {
@@ -107,6 +155,8 @@ export const Board = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [rooms, setRooms] = useState([]);
 	const [users, setUsers] = useState({});
+
+	useNightShift();
 
 	const handleTriggerUpdateRoomRequest = ({ roomIndex, user }) => {
 		setIsLoading(true);

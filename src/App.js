@@ -5,6 +5,7 @@ import './App.css';
 import { Login } from './components/pages/login';
 import { Home } from './components/pages/home';
 import { Board } from './components/pages/board';
+import { Scan } from './components/pages/scan';
 
 function App() {
 	const [user, setUser] = useState(localStorage.getItem('user') || '');
@@ -18,14 +19,16 @@ function App() {
 	}, [user]);
 
 	const showBoard = window.location.pathname === '/board';
+	const showScan = window.location.pathname.match(/^\/scan/);
 
 	return (
 		<ThemeProvider>
 			{showBoard && <Board />}
 			{!showBoard && !user && <Login onUserSet={setUser} />}
-			{!showBoard && !!user && (
+			{!showBoard && !showScan && !!user && (
 				<Home user={user} onUserLogout={handleUserLogout} />
 			)}
+			{showScan && !showBoard && <Scan user={user} />}
 			<ToastContainer
 				position="bottom-right"
 				autoClose={3000}
